@@ -8,6 +8,7 @@ app.config["SECRET_KEY"] = "chickens"
 # app.config["DEBUG_TB_INTERCEPT_REDIRECTS"] = False
 # debug = DebugToolbarExtension(app)
 
+responses = []
 survey = surveys["satisfaction"]
 
 @app.route("/")
@@ -17,45 +18,45 @@ def show_homepage():
 
 @app.route("/start", methods=["POST"])
 def reset_answers() :
+    responses = []
+    session['responses'] = responses
     return redirect("/question/0")
 
-@app.route("/collecting_answer", methods=["POST"])
+@app.route("/collecting_answer", methods=["POST", "GET"])
 def add_answer():
 
-    choices = survey.questions[len(session['responses'])].choices   
+    choices = survey.questions[len(responses)].choices   
 
     if request.form.get('choice') :
         choice = request.form['choice']
-        session['responses'].append(choices[int(choice)])
-        print(f"Session {session}")
-        # return render_template("thank_you.html", survey = survey)
-        return redirect(f"/question/{len(session['responses'])}")
-
-    elif q_number == len(survey.questions) :
-        return redirect("/thank_you")
+        responses.append(choices[int(choice)])
+        session['responses'] = responses
+        return redirect(f"/question/{len(responses)}")
 
     else :
         print("no choice found")
-        return redirect(f"/question/{len(session['responses'])}")
+        return redirect(f"/question/{len(responses)}")
 
 @app.route("/question/<question_number>", methods=["GET"])
 def display_question(question_number):
     """renders the specified question and choices"""
     
-    print(type(session['responses']))
-    q_number = int(question_number)
+    if len(responses) == len(survey.questions) :
+        return redirect("/thank_you")
+      
+    q_number = int(question_number)  
     question = survey.questions[q_number].question
     choices = survey.questions[q_number].choices
 
-    if not q_number == len(session['responses']) :
+    if not q_number == len(responses) :
         message = "Do not alter the URL to change your place in the survey!"
         flash(message)
-        return redirect(f"/question/{len(session['responses'])}")
+        return redirect(f"/question/{len(responses)}")
 
     if q_number == len(survey.questions) - 1 :
-        return render_template("last_question.html", q_number = q_number, question = question, choices = choices)
+        return render_template("last_question.html", q_number = q_number, question = question, choices = choices, responses = responses)
     else : 
-        return render_template("question.html", q_number = q_number, question = question, choices = choices)
+        return render_template("question.html", q_number = q_number, question = question, choices = choices, responses = responses)
 
 @app.route("/thank_you")
 def display_thank_page():

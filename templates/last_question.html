@@ -1,10 +1,11 @@
 {% extends "base.html" %}
 {% block title %} Satisfaction Survey {% endblock %}
 {% block body %} 
-<form action="/collecting_answer">
+<form action="/collecting_answer" method="POST">
+    <p>{{responses}}</p>
     <h3>{{question}}</h3>
     {% for i in range(choices|length) %}
-    <input type="radio" id="choice{{i}}" name="choice" value="{{i}}" required>
+    <input type="radio" id="choice{{i}}" value="{{i}}" name="choice" required>
     <label for="choice{{i}}">{{choices[i]}}</label>
     {% endfor %}
     <button>Finish</button>
