@@ -1,54 +1,63 @@
 from surveys import Question, Survey, satisfaction_survey, personality_quiz, surveys
-from flask import Flask, request, render_template, flash, redirect
+from flask import Flask, request, render_template, flash, redirect, session
 
 app = Flask(__name__)
-
-from flask_debugtoolbar import DebugToolbarExtension
 app.config["SECRET_KEY"] = "chickens"
-app.config["DEBUG_TB_INTERCEPT_REDIRECTS"] = False
-debug = DebugToolbarExtension(app)
 
-responses = []
+# from flask_debugtoolbar import DebugToolbarExtension
+# app.config["DEBUG_TB_INTERCEPT_REDIRECTS"] = False
+# debug = DebugToolbarExtension(app)
+
 survey = surveys["satisfaction"]
 
 @app.route("/")
 def show_homepage(): 
     """shows homepage"""
-    responses.clear()
-    return render_template("surveys.html", survey = survey)
+    return render_template("homepage.html", survey = survey)
 
-@app.route("/satisfaction_survey")
-def load_satisfaction_survey() :
-    """shows satisfaction survey on page"""
-    return render_template("satisfaction_survey.html")
+@app.route("/start", methods=["POST"])
+def reset_answers() :
+    return redirect("/question/0")
 
-@app.route("/question/<question_number>")
+@app.route("/collecting_answer", methods=["POST"])
+def add_answer():
+
+    choices = survey.questions[len(session['responses'])].choices   
+
+    if request.form.get('choice') :
+        choice = request.form['choice']
+        session['responses'].append(choices[int(choice)])
+        print(f"Session {session}")
+        # return render_template("thank_you.html", survey = survey)
+        return redirect(f"/question/{len(session['responses'])}")
+
+    elif q_number == len(survey.questions) :
+        return redirect("/thank_you")
+
+    else :
+        print("no choice found")
+        return redirect(f"/question/{len(session['responses'])}")
+
+@app.route("/question/<question_number>", methods=["GET"])
 def display_question(question_number):
     """renders the specified question and choices"""
     
-    question = survey.questions[int(question_number)].question
-    choices = survey.questions[int(question_number)].choices
+    print(type(session['responses']))
+    q_number = int(question_number)
+    question = survey.questions[q_number].question
+    choices = survey.questions[q_number].choices
 
-    if int(question_number) > 0 :
-        if request.args.get("choice") :
-            responses.append(choices[int(request.args["choice"])])
-    if not int(question_number) == len(responses) :
+    if not q_number == len(session['responses']) :
         message = "Do not alter the URL to change your place in the survey!"
         flash(message)
-        return redirect(f"/question/{len(responses)}")
-    if int(question_number) == len(survey.questions) - 1 :
-        return render_template("last_question.html", q_number = question_number, question = question, choices = choices)
-    else : 
-        question_number = int(question_number) + 1
-        return render_template("question.html", q_number = question_number, question = question, choices = choices)
+        return redirect(f"/question/{len(session['responses'])}")
 
-@app.route("/collecting_answer")
-def add_last_answer():
-    choices = survey.questions[len(survey.questions) - 1].choices
-    responses.append(choices[int(request.args["choice"])])
-    return redirect("/thank_you")
+    if q_number == len(survey.questions) - 1 :
+        return render_template("last_question.html", q_number = q_number, question = question, choices = choices)
+    else : 
+        return render_template("question.html", q_number = q_number, question = question, choices = choices)
 
 @app.route("/thank_you")
 def display_thank_page():
     choices = survey.questions[len(survey.questions) - 1].choices
-    return render_template("thank_you.html", survey = survey, responses = responses)
+    return render_template("thank_you.html", survey = survey)

@@ -1,10 +1,11 @@
 {% extends "base.html" %}
 {% block title %} Satisfaction Survey {% endblock %}
 {% block body %} 
-<form action="/question/{{q_number}}">
+<form action="/collecting_answer" method="POST">
     {% for msg in get_flashed_messages() %} 
     <p>{{msg}}</p>
     {% endfor %}
+    <p>{{session['responses']}}</p>
     <h3>{{question}}</h3>
     {% for i in range(choices|length) %}
     <input type="radio" id="choice{{i}}" value="{{i}}" name="choice" required>

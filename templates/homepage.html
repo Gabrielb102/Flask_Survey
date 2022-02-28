@@ -3,7 +3,7 @@
 {% block body %} 
 <h2>{{survey.title}}</h2>
 <p>{{survey.instructions}}</p>
-<form action="/question/0">
+<form action="/start" method="POST">
     <button> Start </button>
 </form>
 {% endblock %}
